@@ -15,8 +15,8 @@ model User {
   createdAt DateTime @default(now())
   email     String   @unique
   hash      String
-  firstName      String?
-  lastName      String?
+  firstName String?
+  lastName  String?
   role      Role     @default(USER)
   posts     Post[]
 

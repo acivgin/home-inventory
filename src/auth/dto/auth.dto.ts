@@ -1,4 +1,4 @@
-import { IsEmail, IsNotEmpty, IsString } from 'class-validator';
+import { IsEmail, IsNotEmpty } from 'class-validator';
 
 export class AuthDTO {
   @IsEmail()
@@ -9,10 +9,10 @@ export class AuthDTO {
   // @IsStrongPassword()
   password: string;
 
-  @IsString()
+  // @Exclude()
   firstName?: string;
 
-  @IsString()
+  // @Exclude()
   lastName?: string;
 
   role?: Role;
