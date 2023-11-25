@@ -15,9 +15,12 @@ model User {
   createdAt DateTime @default(now())
   email     String   @unique
   hash      String
-  name      String?
+  firstName      String?
+  lastName      String?
   role      Role     @default(USER)
   posts     Post[]
+
+  @@map("users")
 }
 
 model Post {
@@ -26,8 +29,11 @@ model Post {
   updatedAt DateTime @updatedAt
   published Boolean  @default(false)
   title     String   @db.VarChar(255)
+  content   String?
   author    User?    @relation(fields: [authorId], references: [id])
   authorId  Int?
+
+  @@map("posts")
 }
 
 enum Role {
