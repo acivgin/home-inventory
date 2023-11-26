@@ -15,6 +15,7 @@ async function bootstrap() {
   SwaggerModule.setup('api', app, document);
 
   app.useGlobalPipes(new ValidationPipe({}));
+  //app.useGlobalGuards(new JwtAtGuard(new Reflector())); //Loofk provider in app.module.ts
   await app.listen(3000);
 }
 bootstrap();

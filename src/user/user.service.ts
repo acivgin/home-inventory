@@ -15,7 +15,7 @@ export class UserService {
     if (!user) {
       throw new NotFoundException('User not found');
     }
-    delete user.hash;
+    delete user.hashAt;
     return user;
   }
 
@@ -30,7 +30,7 @@ export class UserService {
         email,
       },
     });
-    delete user.hash;
+    delete user.hashAt;
     return user;
   }
 
@@ -44,7 +44,7 @@ export class UserService {
       },
     });
 
-    delete user.hash;
+    delete user.hashAt;
 
     return user;
   }
