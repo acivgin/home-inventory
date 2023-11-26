@@ -3,34 +3,40 @@ import {
   Controller,
   Delete,
   Get,
+  HttpCode,
+  HttpStatus,
+  Param,
   Patch,
   UseGuards,
 } from '@nestjs/common';
-import { User } from '@prisma/client';
-import { GetUserId } from '../auth/decorator/get-user-id-decorator';
 import { EditUserDto } from './dto/edit-user-dto';
 import { UserService } from './user.service';
 import { JwtAtGuard } from '../auth/guards/jwt-at-guard';
-import { GetUser } from 'src/auth/decorator';
 
 @UseGuards(JwtAtGuard)
 @Controller('users')
 export class UserController {
   constructor(private userService: UserService) {}
 
-  @Get('me')
-  getUser(@GetUser() user: User) {
-    console.log();
-    return user;
+  @HttpCode(HttpStatus.OK)
+  @Get()
+  getAllUsers() {
+    return this.userService.getAllUsers();
+  }
+
+  @HttpCode(HttpStatus.OK)
+  @Get(':id')
+  getUser(@Param('id') id: number) {
+    return this.userService.getUser(Number(id));
   }
 
   @Patch(':id')
-  editUser(@GetUserId() userId: number, @Body() dto: EditUserDto) {
-    return this.userService.updateUser(userId, dto);
+  editUser(@Param('id') id: number, @Body() editUser: EditUserDto) {
+    return this.userService.updateUser(Number(id), editUser);
   }
 
   @Delete(':id')
-  deleteUser(@GetUserId() userId: number) {
-    return this.userService.deleteUser(userId);
+  deleteUser(@Param('id') id: number) {
+    return this.userService.deleteUser(Number(id));
   }
 }

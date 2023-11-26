@@ -2,7 +2,7 @@ import { Injectable } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { PassportStrategy } from '@nestjs/passport';
 import { ExtractJwt, Strategy } from 'passport-jwt';
-import { PrismaService } from '../../prisma/prisma.service';
+import { Request } from 'express';
 
 type JwtPayload = { sub: number; email: string };
 
@@ -11,24 +11,19 @@ type JwtPayload = { sub: number; email: string };
  * Authentication strategy for handling JWT access tokens.
  */
 export class AtStrategy extends PassportStrategy(Strategy, 'jwt') {
-  constructor(
-    config: ConfigService,
-    private prisma: PrismaService,
-  ) {
+  constructor(config: ConfigService) {
     super({
       jwtFromRequest: ExtractJwt.fromAuthHeaderAsBearerToken(),
       secretOrKey: config.get('JWT_ACCESS_TOKEN_SECRET'),
+      passReqToCallback: true,
     });
   }
 
-  async validate(payload: JwtPayload) {
-    return payload;
-    // const user = await this.prisma.user.findUnique({
-    //   where: {
-    //     id: payload.sub,
-    //   },
-    // });
-    // delete user.hashAt;
-    // return user;
+  async validate(req: Request, payload: JwtPayload) {
+    const accessToken = req.get('authorization').replace('Bearer', '').trim();
+    return {
+      ...payload,
+      accessToken,
+    };
   }
 }

@@ -10,7 +10,7 @@ import { AuthService } from './auth.service';
 import { AuthDTO } from './dto';
 import { Tokens } from './types';
 import { JwtRtGuard } from './guards/jwt-rt-guard';
-import { GetUserId, GetUserRefreshToken } from './decorator';
+import { GetLoggedUserId, GetUserRefreshToken } from './decorator';
 import { Public } from './decorator/public.decorator';
 
 @Controller('auth')
@@ -48,7 +48,7 @@ export class AuthController {
    * @param userId - The ID of the user.
    * @returns A Promise that resolves to the result of the logout operation.
    */
-  logOut(@GetUserId() userId: number): Promise<void> {
+  logOut(@GetLoggedUserId() userId: number): Promise<void> {
     return this.authService.logOut(userId);
   }
 
@@ -63,7 +63,7 @@ export class AuthController {
    * @returns A Promise that resolves to an object containing the new access and refresh tokens.
    */
   refresh(
-    @GetUserId() userId: number,
+    @GetLoggedUserId() userId: number,
     @GetUserRefreshToken() refreshToken: string,
   ): Promise<Tokens> {
     return this.authService.refreshTokens(userId, refreshToken);

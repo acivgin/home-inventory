@@ -8,7 +8,7 @@ import { JwtPayloadWithRt } from '../types';
  * @returns The refresh token of the authenticated user.
  */
 export const GetUserRefreshToken = createParamDecorator(
-  (data: keyof JwtPayloadWithRt | undefined, ctx: ExecutionContext) => {
+  (data: keyof JwtPayloadWithRt | undefined, ctx: ExecutionContext): string => {
     const request: Express.Request = ctx.switchToHttp().getRequest();
     const user = request.user as JwtPayloadWithRt;
     return user.refreshToken;

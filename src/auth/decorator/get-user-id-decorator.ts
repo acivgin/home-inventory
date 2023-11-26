@@ -7,8 +7,8 @@ import { JwtPayload } from './../../../node_modules/@types/jsonwebtoken/index.d'
  * @param ctx The execution context containing the request object.
  * @returns The user ID extracted from the request object.
  */
-export const GetUserId = createParamDecorator(
-  (_: undefined, ctx: ExecutionContext) => {
+export const GetLoggedUserId = createParamDecorator(
+  (_: undefined, ctx: ExecutionContext): string => {
     const request: Express.Request = ctx.switchToHttp().getRequest();
     const user = request.user as JwtPayload;
     return user.sub;

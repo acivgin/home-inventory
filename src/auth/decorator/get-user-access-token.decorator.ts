@@ -1,5 +1,5 @@
 import { createParamDecorator, ExecutionContext } from '@nestjs/common';
-import { JwtPayloadWithRt } from '../types';
+import { JwtPayloadWithAt } from '../types/jwtPayloadWithAt.type';
 
 /**
  * Custom decorator to retrieve the user from the request object.
@@ -7,10 +7,10 @@ import { JwtPayloadWithRt } from '../types';
  * @param ctx - ExecutionContext object.
  * @returns The value of the specified data key from the user object.
  */
-export const GetUser = createParamDecorator(
-  (_: keyof JwtPayloadWithRt | undefined, ctx: ExecutionContext) => {
+export const GetUserAccessToken = createParamDecorator(
+  (data: keyof JwtPayloadWithAt | undefined, ctx: ExecutionContext) => {
     const request = ctx.switchToHttp().getRequest();
-    const user = request.user;
-    return user;
+    const user = request.user as JwtPayloadWithAt;
+    return user.accessToken;
   },
 );
