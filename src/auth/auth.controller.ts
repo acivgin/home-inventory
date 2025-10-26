@@ -7,7 +7,7 @@ import {
   UseGuards,
 } from '@nestjs/common';
 import { AuthService } from './auth.service';
-import { AuthDTO } from './dto';
+import { SignUpDTO, SignInDTO } from './dto';
 import { Tokens } from './types';
 import { JwtRtGuard } from './guards/jwt-rt-guard';
 import { GetLoggedUserId, GetUserRefreshToken } from './decorator';
@@ -25,7 +25,7 @@ export class AuthController {
    * @param dto - The authentication data for the new user.
    * @returns A Promise that resolves to the result of the sign up operation.
    */
-  signUp(@Body() dto: AuthDTO) {
+  signUp(@Body() dto: SignUpDTO) {
     return this.authService.signUp(dto);
   }
 
@@ -37,7 +37,7 @@ export class AuthController {
    * @param dto - The authentication DTO.
    * @returns A promise that resolves to the tokens.
    */
-  signIn(@Body() dto: AuthDTO): Promise<Tokens> {
+  signIn(@Body() dto: SignInDTO): Promise<Tokens> {
     return this.authService.signIn(dto);
   }
 

@@ -1,6 +1,11 @@
-import { ForbiddenException, Injectable } from '@nestjs/common';
+import {
+  ForbiddenException,
+  Injectable,
+  InternalServerErrorException,
+  Logger,
+} from '@nestjs/common';
 import { PrismaService } from 'src/prisma/prisma.service';
-import { AuthDTO } from './dto';
+import { SignUpDTO, SignInDTO } from './dto';
 import * as argon from 'argon2';
 import { PrismaClientKnownRequestError } from '@prisma/client/runtime/library';
 import { JwtService } from '@nestjs/jwt/dist';
@@ -9,6 +14,8 @@ import { Tokens } from './types';
 
 @Injectable()
 export class AuthService {
+  private readonly logger = new Logger(AuthService.name);
+
   constructor(
     private prisma: PrismaService,
     private jwt: JwtService,
@@ -16,33 +23,47 @@ export class AuthService {
   ) {}
 
   /**
-   * Creates a new user account.
+   * Creates a new user account and returns tokens.
    * @param dto - The authentication DTO containing user information.
-   * @returns The created user object.
+   * @returns The tokens for the newly created user.
    * @throws {ForbiddenException} If the email already exists.
    */
-  async signUp(dto: AuthDTO) {
+  async signUp(dto: SignUpDTO): Promise<Tokens> {
     try {
+      // Sanitize email (trim and lowercase)
+      const sanitizedEmail = dto.email.trim().toLowerCase();
+
+      // Hash the password
+      const hashedPassword = await this.hashData(dto.password);
+
+      // Create user with hashed password, no refresh token initially
       const user = await this.prisma.user.create({
         data: {
-          email: dto.email,
-          firstName: dto.firstName,
-          lastName: dto.lastName,
-          hashAt: await this.hashData(dto.password),
-          hashedRt: await this.hashData(dto.password),
+          email: sanitizedEmail,
+          firstName: dto.firstName?.trim(),
+          lastName: dto.lastName?.trim(),
+          hashAt: hashedPassword,
+          hashedRt: null, // Will be set when tokens are generated
+          role: dto.role || undefined, // Use provided role or default
         },
       });
 
-      delete user.hashAt;
-      delete user.hashedRt;
-      return user;
+      this.logger.log(`New user created: ${sanitizedEmail}`);
+
+      // Generate and return tokens (this will update hashedRt)
+      const tokens = await this.getTokens(user);
+
+      return tokens;
     } catch (error) {
+      this.logger.error(`SignUp failed for email: ${dto.email}`, error.stack);
+
       if (error instanceof PrismaClientKnownRequestError) {
         if (error.code === 'P2002') {
           throw new ForbiddenException('Email already exists');
         }
       }
-      throw error;
+
+      throw new InternalServerErrorException('Failed to create user account');
     }
   }
 
@@ -52,22 +73,37 @@ export class AuthService {
    * @param dto - The authentication DTO containing the user's email and password.
    * @returns A Promise that resolves to an object containing the access and refresh tokens.
    */
-  async signIn(dto: AuthDTO): Promise<Tokens> {
-    const user = await this.prisma.user.findUnique({
-      where: {
-        email: dto.email,
-      },
-    });
-    if (!user) {
-      throw new ForbiddenException('Access Denied');
-    }
+  async signIn(dto: SignInDTO): Promise<Tokens> {
+    try {
+      const sanitizedEmail = dto.email.trim().toLowerCase();
 
-    const isMatch = await argon.verify(user.hashAt, dto.password);
+      const user = await this.prisma.user.findUnique({
+        where: {
+          email: sanitizedEmail,
+        },
+      });
 
-    if (!isMatch) {
-      throw new ForbiddenException('Invalid credentials');
-    }
-    return await this.getTokens(user); //Save tokens in httpOnly cookies on client, to avoid XSS attacks
+      if (!user) {
+        // Use same error message to prevent email enumeration
+        throw new ForbiddenException('Invalid credentials');
+      }
+
+      const isMatch = await argon.verify(user.hashAt, dto.password);
+
+      if (!isMatch) {
+        throw new ForbiddenException('Invalid credentials');
+      }
+
+      this.logger.log(`User signed in: ${sanitizedEmail}`);
+      return await this.getTokens(user);
+    } catch (error) {
+      if (error instanceof ForbiddenException) {
+        throw error;
+      }
+
+      this.logger.error(`SignIn failed for email: ${dto.email}`, error.stack);
+      throw new InternalServerErrorException('Sign in failed');
+    } //Save tokens in httpOnly cookies on client, to avoid XSS attacks
 
     //     In an Angular application, you don't directly interact with cookies for sending them to the server.
     //     The browser automatically includes the cookies with every request to the server that set the cookie,
@@ -194,12 +230,17 @@ export class AuthService {
   }
 
   /**
-   * Hashes the provided data using argon algorithm.
+   * Hashes the provided data using argon2 algorithm with secure configuration.
    * @param data - The data to be hashed.
    * @returns A promise that resolves to the hashed data.
    */
   private async hashData(data: string) {
-    return await argon.hash(data);
+    return await argon.hash(data, {
+      type: argon.argon2id, // Most secure variant
+      memoryCost: 2 ** 16, // 64 MB
+      timeCost: 3, // 3 iterations
+      parallelism: 1, // 1 thread
+    });
   }
 
   /**
