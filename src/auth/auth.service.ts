@@ -44,7 +44,7 @@ export class AuthService {
           lastName: dto.lastName?.trim(),
           hashAt: hashedPassword,
           hashedRt: null, // Will be set when tokens are generated
-          role: dto.role || undefined, // Use provided role or default
+          role: dto.role as any, // Use provided role or default
         },
       });
 

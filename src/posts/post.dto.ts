@@ -1,6 +1,4 @@
-import { Prisma } from '@prisma/client';
-
-export class PostDTO implements Prisma.PostCreateInput {
+export class PostDTO {
   id?: number;
   title: string;
   content: string;
